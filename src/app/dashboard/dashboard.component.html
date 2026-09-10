@@ -1,0 +1,66 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h1>Welcome back, {{ currentUser?.username }}!</h1>
+    <p>Here's what's happening in your workspace.</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">&#128336;</div>
+      <div class="stat-info">
+        <h3>Live Clock</h3>
+        <div class="stat-value">{{ currentTime | date:'HH:mm:ss' }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">&#128101;</div>
+      <div class="stat-info">
+        <h3>Total Users</h3>
+        <div class="stat-value">{{ totalUsers }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">&#128197;</div>
+      <div class="stat-info">
+        <h3>Today</h3>
+        <div class="stat-value">{{ currentTime | date:'MMM d, y' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="card">
+      <h2>Profile</h2>
+      <div class="user-info-row">
+        <span class="user-info-label">Username</span>
+        <span class="user-info-value">{{ currentUser?.username }}</span>
+      </div>
+      <div class="user-info-row">
+        <span class="user-info-label">Email</span>
+        <span class="user-info-value">{{ currentUser?.email }}</span>
+      </div>
+      <div class="user-info-row">
+        <span class="user-info-label">Role</span>
+        <span class="badge" [ngClass]="currentUser?.role">{{ currentUser?.role }}</span>
+      </div>
+      <div class="user-info-row">
+        <span class="user-info-label">Member Since</span>
+        <span class="user-info-value">{{ currentUser?.createdAt | date:'mediumDate' }}</span>
+      </div>
+      <button class="btn-logout-full" (click)="logout()">Sign Out</button>
+    </div>
+
+    <div class="card">
+      <h2>Activity Log</h2>
+      <ul class="activity-log">
+        <li class="activity-item" *ngFor="let item of activityLog">
+          <div class="activity-dot" [ngClass]="item.type"></div>
+          <div>
+            <div class="activity-msg">{{ item.message }}</div>
+            <div class="activity-time">{{ item.time }}</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

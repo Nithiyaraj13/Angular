@@ -1,0 +1,20 @@
+<nav class="navbar">
+  <div class="navbar-brand">
+    <span class="brand-icon">&#9670;</span>
+    <span class="brand-name">MyApp</span>
+  </div>
+  <div class="navbar-menu">
+    <ng-container *ngIf="auth.isLoggedIn(); else guestLinks">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
+      <span class="nav-user">{{ auth.currentUser?.username }}</span>
+      <span class="nav-badge" [class.admin]="auth.currentUser?.role === 'admin'">
+        {{ auth.currentUser?.role }}
+      </span>
+      <button class="btn-logout" (click)="auth.logout()">Logout</button>
+    </ng-container>
+    <ng-template #guestLinks>
+      <a routerLink="/login" routerLinkActive="active" class="nav-link">Login</a>
+      <a routerLink="/register" routerLinkActive="active" class="nav-link">Register</a>
+    </ng-template>
+  </div>
+</nav>
