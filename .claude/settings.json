@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(curl -s http://localhost:4200/ -o /tmp/p.html)",
+      "Read(//tmp/**)",
+      "Bash(wmic process *)",
+      "Bash(curl -s \"http://localhost:4200/@ng/component?c=src%2Fapp%2Fportfolio%2Fportfolio.component.ts%40PortfolioComponent&t=1\" -o /tmp/h.js)",
+      "Bash(rm -rf \"C:/Users/NITHIY~1.VAD/AppData/Local/Temp/pf4\" /tmp/p.html /tmp/q.html /tmp/m.js /tmp/h.js)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\NITHIY~1.VAD\\AppData\\Local\\Temp\\pf4"
+    ]
+  }
+}

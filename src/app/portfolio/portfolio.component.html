@@ -1,0 +1,591 @@
+<div class="page" [class.ready]="!loading()">
+  <!-- LOADING SCREEN -->
+  <div class="preloader" [class.done]="!loading()" aria-hidden="true">
+    <div class="load-art">
+      <span class="load-kicker">Operation</span>
+      <p class="load-title glitch" data-text="PORTFOLIO">PORTFOLIO</p>
+      <p class="load-op">Operator · {{ profile.firstName }} {{ profile.lastName }} · {{ profile.callsign }}</p>
+    </div>
+    <div class="load-foot">
+      <p class="load-tip">{{ loadTip }}</p>
+      <div class="load-bar"><span></span></div>
+      <p class="load-status">Loading mission data<span class="blink">_</span></p>
+    </div>
+  </div>
+
+  <!-- AMBIENCE + HUD OVERLAYS -->
+  <app-battlefield />
+  <div class="fx-vignette" aria-hidden="true"></div>
+  <div class="fx-grain" aria-hidden="true"></div>
+  <div class="fx-scan" aria-hidden="true"></div>
+  <div class="hud-frame" aria-hidden="true">
+    <span class="hf tl"></span><span class="hf tr"></span><span class="hf bl"></span><span class="hf br"></span>
+    <span class="hf-text bl-text">GRID {{ profile.coords }}</span>
+    <span class="hf-text br-text">SECTOR {{ sectorNo() }} / 0{{ sections.length }}</span>
+  </div>
+  <div class="reticle" #reticle aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
+  <div class="hits" #hits aria-hidden="true"></div>
+
+  @for (s of [activeSection()]; track s.id) {
+    @if (s.id !== 'home') {
+      <div class="sector-toast" aria-hidden="true">
+        <span>Entering sector {{ sectorNo() }}</span>
+        <strong>{{ s.title }}</strong>
+      </div>
+    }
+  }
+
+  <!-- 3D OPERATOR (fixed layer, follows you through the page) -->
+  <app-operator [section]="active()" [order]="sectionIds" [revealed]="!loading()" />
+
+  <!-- NAV -->
+  <header class="nav" [class.scrolled]="scrolled() || menuOpen()">
+    <div class="nav-inner container">
+      <a class="brand" href="#home" (click)="go('home', $event)" aria-label="Back to HQ">
+        <span class="brand-mark"><app-icon name="rank" /></span>
+        <span class="brand-text">
+          <span class="brand-name">{{ profile.firstName }}</span>
+          <span class="brand-rank">Lv <span #rank>1</span> · {{ profile.callsign }}</span>
+        </span>
+      </a>
+      <nav class="nav-links" [class.open]="menuOpen()" aria-label="Primary">
+        @for (s of sections; track s.id; let i = $index) {
+          <a [href]="'#' + s.id" [class.active]="active() === s.id" (click)="go(s.id, $event)">
+            <small>0{{ i + 1 }}</small>{{ s.label }}
+          </a>
+        }
+      </nav>
+      <a class="btn btn-sm btn-primary nav-cta" href="#contact" (click)="go('contact', $event)">
+        <app-icon name="transmit" /> Deploy
+      </a>
+      <button
+        class="burger"
+        type="button"
+        [class.open]="menuOpen()"
+        (click)="menuOpen.set(!menuOpen())"
+        aria-label="Toggle menu"
+        [attr.aria-expanded]="menuOpen()"
+      >
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="compass" aria-hidden="true">
+      <div class="compass-track" #compass>
+        @for (rep of [0, 1, 2]; track rep) {
+          @for (m of compassMarks; track $index) {
+            <span [class.major]="m.length === 1">{{ m }}</span>
+          }
+        }
+      </div>
+      <span class="compass-needle"></span>
+      <span class="compass-deg" #heading>000°</span>
+    </div>
+    <div class="xp"><div class="progress" #progress></div></div>
+  </header>
+
+  <main>
+    <!-- HQ / HERO -->
+    <section id="home" class="hero">
+      <svg class="skyline far" viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true"><path [attr.d]="skylineFar" /></svg>
+      <svg class="skyline near" viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true"><path [attr.d]="skylineNear" /></svg>
+      <div class="hero-ground" aria-hidden="true"></div>
+
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="hud-tag hero-anim" style="--d: 0s">
+            <span class="dot"></span> Operator profile <span class="sep">//</span> {{ profile.callsign }}
+          </p>
+          <h1 class="hero-title">
+            <span class="hero-anim glitch" style="--d: 0.1s" [attr.data-text]="profile.firstName">{{ profile.firstName }}</span>
+            <span class="hero-anim outline" style="--d: 0.2s">{{ profile.lastName }}</span>
+          </h1>
+          <dl class="hero-class hero-anim" style="--d: 0.3s">
+            <div><dt>Class</dt><dd>{{ profile.title }}</dd></div>
+            <div><dt>Faction</dt><dd>{{ profile.company }}</dd></div>
+          </dl>
+          <p class="hero-role hero-anim" style="--d: 0.4s">
+            <span class="prompt">&gt;</span> <span class="typed">{{ typed() }}</span><span class="caret"></span>
+          </p>
+          <p class="hero-summary hero-anim" style="--d: 0.5s">{{ profile.tagline }}</p>
+          <div class="hero-actions hero-anim" style="--d: 0.6s">
+            <a class="btn btn-primary" href="#experience" (click)="go('experience', $event)">
+              <app-icon name="crosshair" /> Deploy to missions
+            </a>
+            <a class="btn btn-ghost" href="#contact" (click)="go('contact', $event)"><app-icon name="radio" /> Open comms</a>
+          </div>
+          <ul class="hero-meta hero-anim" style="--d: 0.7s">
+            <li><app-icon name="waypoint" /> {{ profile.location }}</li>
+            <li><app-icon name="parachute" /> {{ profile.travel }}</li>
+          </ul>
+        </div>
+
+        <div class="op-spot hero-anim" style="--d: 0.25s" data-op-spot aria-hidden="true">
+          <span class="spot-beam"></span>
+        </div>
+
+        <aside class="hero-hud hero-anim" style="--d: 0.45s" aria-label="Service summary">
+          <div class="panel radar-panel">
+            <div class="panel-head"><app-icon name="radar" /> UAV online</div>
+            <div class="radar" aria-hidden="true">
+              <span class="sweep"></span>
+              <i style="--bx: 30%; --by: 38%; --bd: 0s"></i>
+              <i style="--bx: 64%; --by: 28%; --bd: 0.9s"></i>
+              <i style="--bx: 58%; --by: 70%; --bd: 1.7s"></i>
+              <b class="you"></b>
+            </div>
+            <div class="radar-stats">
+              @for (s of stats.slice(0, 3); track s.label) {
+                <div>
+                  <strong>{{ s.value }}{{ s.suffix }}</strong>
+                  <span>{{ s.label }}</span>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="panel feed">
+            <div class="panel-head"><app-icon name="target" /> Recent ops</div>
+            <ul>
+              @for (k of feed; track k.target; let i = $index) {
+                <li [style.--i]="i">
+                  <span class="feed-who">NV</span>
+                  <app-icon name="crosshair" />
+                  <span class="feed-what">{{ k.target }}</span>
+                  <span class="feed-op">{{ k.op }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        </aside>
+      </div>
+
+      <a class="scroll-hint" href="#about" (click)="go('about', $event)" aria-label="Scroll to Intel">
+        <span>Scroll to deploy</span>
+        <app-icon name="chevronDown" />
+      </a>
+    </section>
+
+    <!-- INTEL / ABOUT -->
+    <section id="about" class="section">
+      <div class="container">
+        <header class="sec-head" appReveal>
+          <span class="sec-tag">Sector 02 // Intel</span>
+          <h2 class="glitch" data-text="Operator dossier">Operator dossier</h2>
+          <p>Engineering reliable systems, end to end.</p>
+        </header>
+
+        <div class="about-grid">
+          <div appReveal>
+            <article class="panel dossier" appTilt [tiltMax]="3">
+              <span class="stamp">Classified</span>
+              <div class="dossier-top">
+                <div class="dog"><app-icon name="dogtag" /></div>
+                <div>
+                  <h3>{{ profile.firstName }} {{ profile.lastName }}</h3>
+                  <p>{{ profile.title }} &#64; {{ profile.company }}</p>
+                </div>
+              </div>
+              @for (p of profile.overview; track $index) {
+                <p class="lead">{{ p }}</p>
+              }
+              <div class="dossier-foot">
+                <div>
+                  <span class="label">Theaters</span>
+                  <div class="chips">
+                    @for (ind of profile.industries; track ind) {
+                      <span class="chip">{{ ind }}</span>
+                    }
+                  </div>
+                </div>
+                <div>
+                  <span class="label">Base</span>
+                  <div class="chips"><span class="chip">{{ profile.location }}</span></div>
+                </div>
+                <div>
+                  <span class="label">Deployable</span>
+                  <div class="chips"><span class="chip">{{ profile.travel }}</span></div>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="stats">
+            <span class="label stats-title">Service record</span>
+            @for (s of stats; track s.label; let i = $index) {
+              <div appReveal [revealDelay]="i * 100">
+                <div class="panel stat" [style.--glow]="s.glow">
+                  <span class="stat-num"
+                    ><span [appCountUp]="s.value" [decimals]="s.decimals">{{ s.value }}</span><span>{{ s.suffix }}</span></span
+                  >
+                  <span class="stat-label">{{ s.label }}</span>
+                  <span class="stat-bar"><i></i></span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <h3 class="sub-head" appReveal><app-icon name="helmet" /> Class specializations</h3>
+        <div class="roles">
+          @for (r of roles; track r.title; let i = $index) {
+            <div appReveal [revealDelay]="i * 120">
+              <article class="panel role-card" appTilt>
+                <div class="role-top">
+                  <span class="role-icon"><app-icon [name]="r.icon" /></span>
+                  <span class="role-class">{{ r.className }}</span>
+                </div>
+                <h3>{{ r.title }}</h3>
+                <p>{{ r.description }}</p>
+                <div class="chips">
+                  @for (t of r.tools; track t) {
+                    <span class="chip">{{ t }}</span>
+                  }
+                </div>
+              </article>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- LOADOUT / SKILLS -->
+    <section id="skills" class="section">
+      <div class="container">
+        <header class="sec-head" appReveal>
+          <span class="sec-tag">Sector 03 // Loadout</span>
+          <h2 class="glitch" data-text="Arsenal">Arsenal</h2>
+          <p>Target acquisition: spin the radar with your cursor and lock on to any technology to equip its class.</p>
+        </header>
+
+        <div class="skills-grid">
+          <div class="panel sphere-wrap" appReveal>
+            <div class="panel-head"><app-icon name="crosshair" /> Target acquisition</div>
+            <app-skill-sphere [skills]="allSkills" [highlight]="activeSkillNames()" (picked)="pickSkill($event)" />
+          </div>
+
+          <div appReveal [revealDelay]="120">
+            <div class="tabs" role="tablist" aria-label="Skill categories">
+              @for (c of categories; track c.id) {
+                <button
+                  type="button"
+                  role="tab"
+                  class="tab"
+                  [class.active]="activeCategoryId() === c.id"
+                  [attr.aria-selected]="activeCategoryId() === c.id"
+                  (click)="selectCategory(c.id)"
+                >
+                  <span class="tab-slot">{{ c.slot }}</span>
+                  <span class="tab-title"><app-icon [name]="c.icon" /> {{ c.title }}</span>
+                  <span class="count">{{ c.items.length }}</span>
+                </button>
+              }
+            </div>
+            <div class="panel skill-panel" role="tabpanel">
+              <div class="skill-panel-head">
+                <div>
+                  <span class="label">{{ activeCategory().slot }} weapon class</span>
+                  <h3>{{ activeCategory().title }}</h3>
+                </div>
+                <app-icon name="ammo" />
+              </div>
+              <p>{{ activeCategory().blurb }}</p>
+              <ul class="skill-list">
+                @for (item of activeCategory().items; track item.name; let i = $index) {
+                  <li [class.picked]="pickedSkill() === item.name" [style.--i]="i">
+                    <span class="skill-idx">{{ i + 1 < 10 ? '0' : '' }}{{ i + 1 }}</span>
+                    <span class="skill-name">{{ item.name }}</span>
+                    <span class="skill-note">{{ item.note }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MISSIONS / EXPERIENCE -->
+    <section id="experience" class="section">
+      <div class="container">
+        <header class="sec-head" appReveal>
+          <span class="sec-tag">Sector 04 // Campaign</span>
+          <h2 class="glitch" data-text="Missions">Missions</h2>
+          <p>Every deployment, objective and reward on record.</p>
+        </header>
+
+        <div class="panel faction" appReveal>
+          <div class="faction-logo"><app-icon name="shield" /></div>
+          <div>
+            <span class="label">Faction</span>
+            <h3>{{ profile.company }}</h3>
+            <p>{{ profile.title }} · {{ profile.location }}</p>
+          </div>
+          <span class="when">Deployed {{ profile.since }}</span>
+        </div>
+
+        <div class="missions">
+          @for (exp of experiences; track exp.client; let i = $index) {
+            <article class="mission" appReveal [class.open]="expanded() === i" [style.--accent]="exp.accent">
+              <div class="panel mission-card" appTilt [tiltMax]="2">
+                <div class="mission-top">
+                  <span class="mission-no">Op. 0{{ i + 1 }}</span>
+                  <span class="mission-theater"><app-icon name="waypoint" /> {{ exp.domain }}</span>
+                </div>
+                <h3>Operation {{ exp.client }}</h3>
+                <p class="mission-headline">{{ exp.headline }}</p>
+                <p class="mission-brief"><span class="label">Briefing</span> {{ exp.summary }}</p>
+                <div class="chips">
+                  @for (t of exp.tags; track t) {
+                    <span class="chip">{{ t }}</span>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="mission-toggle"
+                  (click)="toggleExperience(i)"
+                  [attr.aria-expanded]="expanded() === i"
+                  [attr.aria-controls]="'exp-' + i"
+                >
+                  {{ expanded() === i ? 'Close objectives' : 'View objectives' }}
+                  <app-icon name="chevronDown" />
+                </button>
+                <div class="mission-details" [id]="'exp-' + i">
+                  <div class="mission-details-inner">
+                    <h4>Objectives</h4>
+                    <ul class="checks">
+                      @for (r of exp.responsibilities; track $index) {
+                        <li><span class="tick"><app-icon name="check" /></span> <span>{{ r }}</span></li>
+                      }
+                    </ul>
+                    <div class="reward">
+                      <app-icon name="medal" />
+                      <div>
+                        <h4>Mission reward</h4>
+                        <p>{{ exp.value }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+
+        <div class="panel pipeline" appReveal>
+          <div class="pipe-head">
+            <div>
+              <span class="sec-tag">Supply line</span>
+              <h3>Event stream in motion</h3>
+            </div>
+            <p>
+              The kind of pipeline I build and migrate: services publish events, partitioned topics carry them under
+              schema contracts, and RBAC-secured consumer groups process them in real time.
+            </p>
+          </div>
+          <div class="pipe">
+            <div class="node"><app-icon name="server" /> Producers <small>Spring Boot services</small></div>
+            <div class="lanes">
+              @for (p of partitions; track p) {
+                <div class="lane">
+                  <span class="lane-label">topic · partition-{{ p }}</span>
+                  @for (m of [0, 1, 2]; track m) {
+                    <span class="msg" [style.animation-delay]="0 - (m * 1.4 + p * 0.55) + 's'"></span>
+                  }
+                </div>
+              }
+              <div class="schema"><app-icon name="layers" /> Schema Registry · data contracts</div>
+            </div>
+            <div class="node consumer"><app-icon name="squad" /> Consumer group <small>RBAC-secured</small></div>
+          </div>
+          <div class="envs">
+            <span class="envs-label">Sectors secured</span>
+            @for (env of environments; track env) {
+              <span class="env"><app-icon name="check" /> {{ env }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEDALS / CREDENTIALS -->
+    <section id="credentials" class="section">
+      <div class="container">
+        <header class="sec-head" appReveal>
+          <span class="sec-tag">Sector 05 // Commendations</span>
+          <h2 class="glitch" data-text="Medals">Medals</h2>
+          <p>Hover or tap a medal to inspect the citation.</p>
+        </header>
+
+        <div class="cred-grid">
+          <div appReveal>
+            <article class="panel training" appTilt [tiltMax]="4">
+              <span class="training-badge"><app-icon name="star" /></span>
+              <span class="label">Basic training</span>
+              <h3>{{ education.degree }}</h3>
+              <p class="edu-field">{{ education.field }}</p>
+              <p class="edu-spec">{{ education.specialization }}</p>
+              <div class="edu-foot">
+                <span>{{ education.school }}</span>
+                <span class="when">Class of {{ education.year }}</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="certs">
+            @for (cert of certifications; track cert.title; let i = $index) {
+              <div
+                class="flip"
+                appReveal
+                [revealDelay]="i * 100"
+                [class.flipped]="flipped().has(i)"
+                (click)="flip(i)"
+                (keydown.enter)="flip(i)"
+                (keydown.space)="$event.preventDefault(); flip(i)"
+                tabindex="0"
+                role="button"
+                [attr.aria-pressed]="flipped().has(i)"
+                [attr.aria-label]="cert.title + ' certification — flip for details'"
+              >
+                <div class="flip-inner">
+                  <div class="flip-face flip-front">
+                    <span class="medal-icon"><app-icon name="medal" /></span>
+                    <p class="cert-title">{{ cert.title }}</p>
+                    <p class="cert-issuer"><span>{{ cert.issuer }}</span><span class="flip-hint">Inspect ↻</span></p>
+                  </div>
+                  <div class="flip-face flip-back">
+                    <h4>Citation</h4>
+                    <ul>
+                      @for (t of cert.topics; track t) {
+                        <li>{{ t }}</li>
+                      }
+                    </ul>
+                    <p class="cert-issuer"><span>{{ cert.issuer }} · Certified</span></p>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMS / CONTACT -->
+    <section id="contact" class="section">
+      <div class="container">
+        <header class="sec-head" appReveal>
+          <span class="sec-tag">Sector 06 // Comms</span>
+          <h2 class="glitch" data-text="Open channel">Open channel</h2>
+          <p>Need a squad member who owns features from API to UI? Radio in.</p>
+        </header>
+
+        <div class="contact-grid">
+          <div appReveal>
+            <p class="contact-intro">
+              Looking for a backend or full-stack engineer who can own features from API to UI, migrate event-streaming
+              platforms, or harden releases with automation? I'd love to hear from you.
+            </p>
+            <ul class="info-list">
+              <li class="panel info-item">
+                <span class="info-icon"><app-icon name="radio" /></span>
+                <div>
+                  <span class="label">Frequency (email)</span>
+                  <a class="val" [href]="'mailto:' + profile.email">{{ profile.email }}</a>
+                </div>
+                <button type="button" class="copy-btn" (click)="copyEmail()">
+                  <app-icon name="copy" /> {{ copied() ? 'Copied!' : 'Copy' }}
+                </button>
+              </li>
+              <li class="panel info-item">
+                <span class="info-icon"><app-icon name="waypoint" /></span>
+                <div><span class="label">Base</span><span class="val">{{ profile.location }}</span></div>
+              </li>
+              <li class="panel info-item">
+                <span class="info-icon"><app-icon name="parachute" /></span>
+                <div><span class="label">Deployable</span><span class="val">{{ profile.travel }}</span></div>
+              </li>
+              <li class="panel info-item">
+                <span class="info-icon"><app-icon name="briefcase" /></span>
+                <div><span class="label">Current post</span><span class="val">{{ profile.title }}, Perficient</span></div>
+              </li>
+            </ul>
+          </div>
+
+          <div appReveal [revealDelay]="120">
+            <form class="panel contact-form" #f="ngForm" (ngSubmit)="send(f)" novalidate>
+              <div class="radio-head">
+                <span><span class="dot"></span> Secure channel</span>
+                <span class="freq">CH-06 · ENCRYPTED</span>
+              </div>
+              <div class="field-row">
+                <div class="field" [class.invalid]="nameCtrl.invalid && (nameCtrl.touched || f.submitted)">
+                  <input id="name" name="name" placeholder=" " required [(ngModel)]="form.name" #nameCtrl="ngModel" autocomplete="name" />
+                  <label for="name">Callsign (your name)</label>
+                  @if (nameCtrl.invalid && (nameCtrl.touched || f.submitted)) {
+                    <span class="error">Please tell me your name.</span>
+                  }
+                </div>
+                <div class="field" [class.invalid]="emailCtrl.invalid && (emailCtrl.touched || f.submitted)">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder=" "
+                    required
+                    email
+                    [(ngModel)]="form.email"
+                    #emailCtrl="ngModel"
+                    autocomplete="email"
+                  />
+                  <label for="email">Return frequency (email)</label>
+                  @if (emailCtrl.invalid && (emailCtrl.touched || f.submitted)) {
+                    <span class="error">Enter a valid email address.</span>
+                  }
+                </div>
+              </div>
+              <div class="field">
+                <input id="subject" name="subject" placeholder=" " [(ngModel)]="form.subject" />
+                <label for="subject">Subject (optional)</label>
+              </div>
+              <div class="field" [class.invalid]="msgCtrl.invalid && (msgCtrl.touched || f.submitted)">
+                <textarea
+                  id="message"
+                  name="message"
+                  placeholder=" "
+                  required
+                  minlength="10"
+                  [(ngModel)]="form.message"
+                  #msgCtrl="ngModel"
+                ></textarea>
+                <label for="message">Message</label>
+                @if (msgCtrl.invalid && (msgCtrl.touched || f.submitted)) {
+                  <span class="error">Message should be at least 10 characters.</span>
+                }
+              </div>
+              <div class="form-foot">
+                <button type="submit" class="btn btn-primary"><app-icon name="transmit" /> Transmit</button>
+                @switch (formStatus()) {
+                  @case ('sent') {
+                    <span class="form-status" role="status">Your email app is opening with the message ready to send.</span>
+                  }
+                  @case ('invalid') {
+                    <span class="form-status err" role="alert">Please fix the highlighted fields.</span>
+                  }
+                }
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span>© {{ year }} {{ profile.firstName }} {{ profile.lastName }} · Built with Angular</span>
+      <span>Fan-made tactical theme · not affiliated with Call of Duty® or Activision</span>
+    </div>
+  </footer>
+
+  <button type="button" class="to-top" [class.show]="showTop()" (click)="go('home')" aria-label="Back to HQ">
+    <app-icon name="chevronsUp" />
+  </button>
+</div>
