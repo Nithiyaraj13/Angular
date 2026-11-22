@@ -23,7 +23,6 @@
     <span class="hf-text bl-text">GRID {{ profile.coords }}</span>
     <span class="hf-text br-text">SECTOR {{ sectorNo() }} / 0{{ sections.length }}</span>
   </div>
-  <div class="reticle" #reticle aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
   <div class="hits" #hits aria-hidden="true"></div>
 
   @for (s of [activeSection()]; track s.id) {
@@ -581,8 +580,7 @@
   <footer class="footer">
     <div class="container footer-inner">
       <span>© {{ year }} {{ profile.firstName }} {{ profile.lastName }} · Built with Angular</span>
-      <span>Fan-made tactical theme · not affiliated with Call of Duty® or Activision</span>
-    </div>
+        </div>
   </footer>
 
   <button type="button" class="to-top" [class.show]="showTop()" (click)="go('home')" aria-label="Back to HQ">

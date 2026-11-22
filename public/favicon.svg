@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc23a"/>
+      <stop offset="0.55" stop-color="#f2a900"/>
+      <stop offset="1" stop-color="#c98a00"/>
+    </linearGradient>
+  </defs>
+  <!-- Hexagon emblem with a dark rim -->
+  <path d="M32 2 58 17v30L32 62 6 47V17z" fill="#0b0b08"/>
+  <path d="M32 6.5 54 19.2v25.6L32 57.5 10 44.8V19.2z" fill="url(#g)"/>
+  <!-- Rank chevrons -->
+  <path d="m18 25 14-8 14 8M18 35l14-8 14 8M18 45l14-8 14 8" fill="none" stroke="#0b0b08" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

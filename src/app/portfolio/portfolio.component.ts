@@ -126,7 +126,6 @@ export class PortfolioComponent {
   protected readonly copied = signal(false);
 
   private readonly progressBar = viewChild.required<ElementRef<HTMLElement>>('progress');
-  private readonly reticle = viewChild.required<ElementRef<HTMLElement>>('reticle');
   private readonly hits = viewChild.required<ElementRef<HTMLElement>>('hits');
   private readonly rank = viewChild.required<ElementRef<HTMLElement>>('rank');
   private readonly compass = viewChild.required<ElementRef<HTMLElement>>('compass');
@@ -222,11 +221,8 @@ export class PortfolioComponent {
   }
 
   private bindPointer(): void {
-    const fine = matchMedia('(pointer: fine)').matches;
-    const reticle = this.reticle().nativeElement;
     const hits = this.hits().nativeElement;
     const root = document.documentElement;
-    if (fine) root.classList.add('has-reticle');
 
     let raf = 0;
     let x = 0;
@@ -237,17 +233,9 @@ export class PortfolioComponent {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        if (fine) {
-          reticle.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-          reticle.classList.add('on');
-        }
         root.style.setProperty('--px', (x / innerWidth - 0.5).toFixed(3));
         root.style.setProperty('--py', (y / innerHeight - 0.5).toFixed(3));
       });
-    };
-    const onOver = (e: PointerEvent) => {
-      const target = e.target instanceof Element ? e.target : null;
-      reticle.classList.toggle('hot', !!target?.closest('a, button, [role="button"], input, textarea, .op-hit'));
     };
     // Hit marker on every click, like landing a shot.
     const onDown = (e: PointerEvent) => {
@@ -258,14 +246,11 @@ export class PortfolioComponent {
       setTimeout(() => m.remove(), 320);
     };
     addEventListener('pointermove', onMove, { passive: true });
-    addEventListener('pointerover', onOver, { passive: true });
     addEventListener('pointerdown', onDown, { passive: true });
     this.destroyRef.onDestroy(() => {
       removeEventListener('pointermove', onMove);
-      removeEventListener('pointerover', onOver);
       removeEventListener('pointerdown', onDown);
       cancelAnimationFrame(raf);
-      root.classList.remove('has-reticle');
     });
   }
 
